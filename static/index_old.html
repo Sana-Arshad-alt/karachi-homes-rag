@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Karachi Homes Realty Assistant</title>
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #edf1ee; --panel: #ffffff; --text: #1f2d27; --muted: #64746c; --line: #dbe3de;
+    --brand: #4f7a68; --brand-dark: #3e6354; --brand-soft: #e1ece6; --brand-ink: #2f5a47;
+    --lav: #ece6f5; --lav-ink: #4b3d6b;
+    --sand: #f3ecda; --sand-ink: #6b5a2e;
+    --bot: #f1f4f2; --danger: #b42318;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html, body { height: 100%; margin: 0; }
+  body { background: var(--bg); color: var(--text);
+         font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; }
+  button { font: inherit; cursor: pointer; }
+
+  .logo { width: 42px; height: 42px; border-radius: 12px; background: var(--brand); color: #fff;
+          display: grid; place-items: center; flex: none; }
+  .logo svg { width: 24px; height: 24px; }
+  h1 { font-size: 18px; margin: 0; letter-spacing: -.2px; }
+  .sub { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+  .note { font-size: 11.5px; color: var(--muted); text-align: center; }
+  .send { background: var(--brand); color: #fff; border: 0; border-radius: 12px; padding: 0 24px; font-weight: 600; }
+  .send:hover { background: var(--brand-dark); }
+  .send:disabled, input:disabled { opacity: .6; cursor: not-allowed; }
+  input { font: inherit; padding: 13px 16px; border-radius: 12px; border: 1px solid var(--line);
+          background: var(--panel); color: var(--text); width: 100%; }
+  input:focus { outline: 2px solid var(--brand); border-color: transparent; }
+
+  /* ---------- login / sign up ---------- */
+  .auth-wrap { min-height: 100%; display: grid; place-items: center; padding: 16px; }
+  .auth-card { width: 100%; max-width: 420px; background: var(--panel); border: 1px solid var(--line);
+               border-radius: 22px; padding: 26px; display: flex; flex-direction: column; gap: 16px;
+               box-shadow: 0 4px 18px rgba(31,45,39,.08); }
+  .auth-brand { display: flex; align-items: center; gap: 12px; }
+  .tabs { display: grid; grid-template-columns: 1fr 1fr; background: var(--bot); border-radius: 12px; padding: 4px; }
+  .tab { border: 0; background: transparent; padding: 10px; border-radius: 9px; font-weight: 600; color: var(--muted); }
+  .tab.active { background: var(--panel); color: var(--text); box-shadow: 0 1px 3px rgba(0,0,0,.10); }
+  #authForm { display: flex; flex-direction: column; gap: 12px; }
+  #authForm label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600; }
+  #authForm .send { padding: 13px; margin-top: 4px; }
+  .hint { font-size: 12px; color: var(--muted); }
+  .error { color: var(--danger); font-size: 13px; min-height: 18px; }
+
+  /* ---------- chat ---------- */
+  .app { max-width: 980px; height: 100%; margin: 0 auto; display: flex; flex-direction: column;
+         padding: 16px; gap: 12px; }
+  header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .actions { display: flex; align-items: center; gap: 8px; }
+  .who { font-size: 13px; color: var(--muted); max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ghost { background: var(--panel); color: var(--text); border: 1px solid var(--line);
+           border-radius: 10px; padding: 8px 14px; }
+  .ghost:hover { border-color: var(--brand); color: var(--brand); }
+
+  .chat { flex: 1; overflow-y: auto; background: var(--panel); border: 1px solid var(--line);
+          border-radius: 18px; padding: 18px; display: flex; flex-direction: column; gap: 14px; }
+  .msg { max-width: 82%; padding: 11px 15px; border-radius: 16px; line-height: 1.55; font-size: 15px;
+         word-wrap: break-word; }
+  .msg.user { align-self: flex-end; background: var(--brand); color: #fff; border-bottom-right-radius: 5px; }
+  .msg.bot { align-self: flex-start; background: var(--bot); border-bottom-left-radius: 5px; }
+  .msg p { margin: 4px 0; }
+  .msg ul { margin: 6px 0; padding-left: 20px; }
+
+  details { margin-top: 8px; font-size: 12px; color: var(--muted); }
+  details summary { cursor: pointer; }
+  details div { margin-top: 4px; line-height: 1.7; }
+  code { background: rgba(100,116,108,.14); padding: 1px 6px; border-radius: 5px; font-size: 11.5px; word-break: break-all; }
+
+  .cards { align-self: stretch; display: grid; gap: 12px;
+           grid-template-columns: repeat(auto-fill, minmax(235px, 1fr)); }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 14px;
+          display: flex; flex-direction: column; gap: 8px; box-shadow: 0 1px 3px rgba(31,45,39,.06); }
+  .card-top { display: flex; align-items: center; justify-content: space-between; }
+  .icon { width: 46px; height: 46px; border-radius: 13px; display: grid; place-items: center; }
+  .icon svg { width: 26px; height: 26px; }
+  .tag { font-size: 11.5px; font-weight: 600; padding: 4px 11px; border-radius: 999px; }
+  .t-House { background: var(--brand-soft); color: var(--brand-ink); }
+  .t-Flat { background: var(--lav); color: var(--lav-ink); }
+  .t-Plot { background: var(--sand); color: var(--sand-ink); }
+  .price { font-size: 23px; font-weight: 700; letter-spacing: -.3px; margin-top: 2px; }
+  .where { font-size: 14px; font-weight: 600; line-height: 1.3; }
+  .society { font-size: 12.5px; color: var(--muted); margin-top: -4px; }
+  .facts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 2px; }
+  .fact { font-size: 12px; background: var(--bot); border-radius: 8px; padding: 4px 9px; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { background: var(--lav); border: 1px solid transparent; border-radius: 999px; padding: 7px 14px;
+          font-size: 13px; color: var(--lav-ink); }
+  .chip:hover { border-color: var(--lav-ink); }
+
+  #form { display: flex; gap: 8px; }
+  #form input { flex: 1; width: auto; }
+
+  /* voice */
+  .voice-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+  .voice-row select { font: inherit; padding: 6px 10px; border-radius: 10px; border: 1px solid var(--line);
+                      background: var(--panel); color: var(--text); }
+  .toggle { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+  .toggle input { width: auto; padding: 0; }
+  .voice-status { min-height: 18px; }
+  .mic { width: 48px; flex: none; border: 1px solid var(--line); background: var(--panel); color: var(--brand);
+         border-radius: 12px; display: grid; place-items: center; }
+  .mic svg { width: 22px; height: 22px; }
+  .mic:hover { border-color: var(--brand); }
+  .mic.listening { background: var(--danger); border-color: var(--danger); color: #fff; animation: pulse 1.4s infinite; }
+  .mic:disabled { opacity: .6; cursor: not-allowed; }
+  @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(180,35,24,.45); } 70% { box-shadow: 0 0 0 10px rgba(180,35,24,0); } 100% { box-shadow: 0 0 0 0 rgba(180,35,24,0); } }
+
+  .typing span { display: inline-block; width: 7px; height: 7px; margin: 0 2px; border-radius: 50%;
+                 background: var(--muted); animation: blink 1.2s infinite; }
+  .typing span:nth-child(2) { animation-delay: .2s; }
+  .typing span:nth-child(3) { animation-delay: .4s; }
+  @keyframes blink { 0%, 80%, 100% { opacity: .25; } 40% { opacity: 1; } }
+</style>
+</head>
+<body>
+
+<!-- ======================= LOGIN / SIGN UP ======================= -->
+<div class="auth-wrap" id="authView" hidden>
+  <div class="auth-card">
+    <div class="auth-brand">
+      <div class="logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9.5h13V10"/><path d="M10 19.5v-5h4v5"/></svg>
+      </div>
+      <div>
+        <h1>Karachi Homes Realty</h1>
+        <div class="sub">AI assistant &middot; English and Roman Urdu</div>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button type="button" class="tab active" id="tabLogin">Log in</button>
+      <button type="button" class="tab" id="tabSignup">Sign up</button>
+    </div>
+
+    <form id="authForm" novalidate>
+      <label id="nameRow" hidden>Full name
+        <input id="nameInput" type="text" autocomplete="name" maxlength="60">
+      </label>
+      <label>Email
+        <input id="emailInput" type="email" autocomplete="email" maxlength="254">
+      </label>
+      <label>Password
+        <input id="passwordInput" type="password" autocomplete="current-password" maxlength="128">
+      </label>
+      <label id="confirmRow" hidden>Confirm password
+        <input id="confirmInput" type="password" autocomplete="new-password" maxlength="128">
+      </label>
+      <div class="hint" id="pwHint" hidden>Use at least 8 characters.</div>
+      <div class="error" id="authError" role="alert"></div>
+      <button class="send" id="authSubmit" type="submit">Log in</button>
+    </form>
+
+    <div class="note">Demo project. Property listings are real Zameen.com data (Kaggle, 2023). Company documents are AI-generated demo data.</div>
+  </div>
+</div>
+
+<!-- ============================ CHAT ============================ -->
+<div class="app" id="chatView" hidden>
+  <header>
+    <div class="brand">
+      <div class="logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9.5h13V10"/><path d="M10 19.5v-5h4v5"/></svg>
+      </div>
+      <div>
+        <h1>Karachi Homes Realty</h1>
+        <div class="sub">AI assistant &middot; English and Roman Urdu</div>
+      </div>
+    </div>
+    <div class="actions">
+      <span class="who" id="userLabel"></span>
+      <button class="ghost" id="newChat" type="button">New chat</button>
+      <button class="ghost" id="logout" type="button">Log out</button>
+    </div>
+  </header>
+
+  <div class="chat" id="chat"></div>
+  <div class="chips" id="chips"></div>
+
+  <div class="voice-row">
+    <select id="voiceLang" aria-label="Voice input language">
+      <option value="en-US">Speak: English</option>
+      <option value="ur-PK">Speak: Urdu</option>
+    </select>
+    <label class="toggle" id="speakLabel"><input type="checkbox" id="speakToggle"> Read answers aloud</label>
+    <span class="voice-status" id="voiceStatus" role="status" aria-live="polite"></span>
+  </div>
+
+  <form id="form" autocomplete="off">
+    <button class="mic" id="mic" type="button" aria-label="Speak your question" aria-pressed="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3z"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+    </button>
+    <input id="input" type="text" placeholder="Ask about commission, plans, or search properties..." aria-label="Your question" maxlength="1000">
+    <button class="send" id="send" type="submit">Send</button>
+  </form>
+
+  <div class="note">Demo project. Property listings are real Zameen.com data (Kaggle, 2023). Company documents (FAQ, plans, policy) are AI-generated demo data.</div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const authView = $("authView"), chatView = $("chatView");
+const authForm = $("authForm"), authError = $("authError"), authSubmit = $("authSubmit");
+const nameInput = $("nameInput"), emailInput = $("emailInput");
+const passwordInput = $("passwordInput"), confirmInput = $("confirmInput");
+const chat = $("chat"), form = $("form"), input = $("input"), sendBtn = $("send"), chips = $("chips");
+
+const EXAMPLES = [
+  "How much commission do you charge?",
+  "Sunday ko office khula hai?",
+  "Bahria Town mein installment plan kya hai?",
+  "5 bedroom house in DHA under 8 crore",
+  "Show me flats in Bahria Town under 1 crore",
+  "Can I get a discount on a 6 crore house?"
+];
+
+const SVG_OPEN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">';
+const ICONS = {
+  House: SVG_OPEN + '<path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9.5h13V10"/><path d="M10 19.5v-5h4v5"/></svg>',
+  Flat: SVG_OPEN + '<path d="M5 20V5.5L13 3v17"/><path d="M13 9l6 2v9"/><path d="M3 20h18"/><path d="M8.5 8h1M8.5 11.5h1M8.5 15h1"/></svg>',
+  Plot: SVG_OPEN + '<path d="M3 17l4-9h10l4 9z"/><path d="M9 8l-2 9M15 8l2 9M5 12.5h14"/></svg>'
+};
+
+function el(tag, className, text) {
+  const e = document.createElement(tag);
+  if (className) e.className = className;
+  if (text != null) e.textContent = text;
+  return e;
+}
+
+async function api(path, method = "GET", body) {
+  const opts = { method, headers: {}, credentials: "same-origin" };
+  if (body) { opts.headers["Content-Type"] = "application/json"; opts.body = JSON.stringify(body); }
+  try {
+    const res = await fetch(path, opts);
+    let data = {};
+    try { data = await res.json(); } catch (e) {}
+    return { ok: res.ok, status: res.status, data };
+  } catch (e) {
+    return { ok: false, status: 0, data: { error: "Could not reach the server. Is api.py running?" } };
+  }
+}
+
+/* ---------------- login / sign up ---------------- */
+let mode = "login";
+
+function setMode(m) {
+  mode = m;
+  $("tabLogin").classList.toggle("active", m === "login");
+  $("tabSignup").classList.toggle("active", m === "signup");
+  $("nameRow").hidden = m === "login";
+  $("confirmRow").hidden = m === "login";
+  $("pwHint").hidden = m === "login";
+  passwordInput.autocomplete = m === "login" ? "current-password" : "new-password";
+  authSubmit.textContent = m === "login" ? "Log in" : "Create account";
+  authError.textContent = "";
+}
+
+function showAuth(message) {
+  stopSpeaking();
+  stopListening();
+  chatView.hidden = true;
+  authView.hidden = false;
+  [nameInput, emailInput, passwordInput, confirmInput].forEach(i => { i.value = ""; });
+  setMode("login");
+  authError.textContent = message || "";
+  emailInput.focus();
+}
+
+$("tabLogin").addEventListener("click", () => setMode("login"));
+$("tabSignup").addEventListener("click", () => setMode("signup"));
+
+authForm.addEventListener("submit", async e => {
+  e.preventDefault();
+  authError.textContent = "";
+  const email = emailInput.value.trim();
+  const password = passwordInput.value;
+  const body = { email, password };
+
+  if (!email || !password) { authError.textContent = "Please fill in all the fields."; return; }
+  if (mode === "signup") {
+    const name = nameInput.value.trim();
+    if (!name) { authError.textContent = "Please enter your name."; return; }
+    if (password.length < 8) { authError.textContent = "Password must be at least 8 characters."; return; }
+    if (password !== confirmInput.value) { authError.textContent = "Passwords do not match."; return; }
+    body.name = name;
+  }
+
+  authSubmit.disabled = true;
+  const r = await api(mode === "login" ? "/login" : "/signup", "POST", body);
+  authSubmit.disabled = false;
+  if (!r.ok) { authError.textContent = r.data.error || "Something went wrong. Please try again."; return; }
+  passwordInput.value = ""; confirmInput.value = "";
+  await enterChat(r.data.user);
+});
+
+/* ---------------- chat rendering ---------------- */
+function addInline(parent, text) {
+  // **bold** support; everything else is inserted as plain text (no HTML injection)
+  text.split(/(\*\*[^*]+\*\*)/g).forEach(part => {
+    if (part.startsWith("**") && part.endsWith("**") && part.length > 4) {
+      const b = document.createElement("strong");
+      b.textContent = part.slice(2, -2);
+      parent.appendChild(b);
+    } else if (part) {
+      parent.appendChild(document.createTextNode(part));
+    }
+  });
+}
+
+function renderText(container, text) {
+  let list = null;
+  text.split("\n").forEach(line => {
+    const m = line.match(/^\s*[-*]\s+(.*)$/);
+    if (m) {
+      if (!list) { list = document.createElement("ul"); container.appendChild(list); }
+      const li = document.createElement("li");
+      addInline(li, m[1]);
+      list.appendChild(li);
+    } else {
+      list = null;
+      if (line.trim()) {
+        const p = document.createElement("p");
+        addInline(p, line);
+        container.appendChild(p);
+      }
+    }
+  });
+}
+
+function renderCards(cards) {
+  const wrap = el("div", "cards");
+  cards.forEach(c => {
+    const type = ICONS[c.type] ? c.type : "House";
+    const card = el("div", "card");
+
+    const top = el("div", "card-top");
+    const icon = el("div", "icon t-" + type);
+    icon.innerHTML = ICONS[type];          // static icon markup, no user data
+    top.appendChild(icon);
+    top.appendChild(el("span", "tag t-" + type, type));
+    card.appendChild(top);
+
+    if (c.price_text) card.appendChild(el("div", "price", "Rs " + c.price_text));
+    card.appendChild(el("div", "where", c.area || c.society || "Karachi"));
+    if (c.society && c.area && !String(c.area).includes(c.society) && c.society !== "Karachi") {
+      card.appendChild(el("div", "society", c.society));
+    }
+
+    const facts = el("div", "facts");
+    if (c.size_sqyd) facts.appendChild(el("span", "fact", c.size_sqyd + " sq yd"));
+    if (c.bedrooms > 0) facts.appendChild(el("span", "fact", c.bedrooms + (c.bedrooms === 1 ? " bed" : " beds")));
+    if (c.baths) facts.appendChild(el("span", "fact", c.baths + (c.baths === 1 ? " bath" : " baths")));
+    card.appendChild(facts);
+
+    wrap.appendChild(card);
+  });
+  return wrap;
+}
+
+function addMessage(role, text, info) {
+  const div = el("div", "msg " + role);
+  if (role === "bot") renderText(div, text); else div.textContent = text;
+
+  if (info) {
+    const d = document.createElement("details");
+    d.appendChild(el("summary", null, "How the bot answered"));
+    const body = document.createElement("div");
+    const rows = [
+      ["Understood as", info.standalone],
+      ["Type", info.intent],
+      ["Search query", info.search],
+      ["Filters", info.filters],
+      ["Tokens", info.tokens],
+      ["Time", info.seconds != null ? info.seconds + " s" : ""],
+      ["Cached", info.cached ? "yes" : "no"]
+    ];
+    rows.forEach(([k, v]) => {
+      if (v === "" || v == null || v === "None") return;
+      const line = document.createElement("div");
+      line.appendChild(document.createTextNode(k + ": "));
+      line.appendChild(el("code", null, String(v)));
+      body.appendChild(line);
+    });
+    d.appendChild(body);
+    div.appendChild(d);
+  }
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+  return div;
+}
+
+function showTyping() {
+  const div = el("div", "msg bot typing");
+  div.innerHTML = "<span></span><span></span><span></span>";
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+  return div;
+}
+
+let currentUser = null;
+
+function start() {
+  chat.innerHTML = "";
+  const first = currentUser ? currentUser.name.split(" ")[0] : "";
+  addMessage("bot", "Assalam o Alaikum" + (first ? " " + first : "") + "! I am the Karachi Homes Realty assistant. Ask me about commission, office timings, payment plans and societies, or search properties by area, bedrooms and budget.");
+  chips.innerHTML = "";
+  chips.style.display = "flex";
+  EXAMPLES.forEach(q => {
+    const b = el("button", "chip", q);
+    b.type = "button";
+    b.onclick = () => send(q);
+    chips.appendChild(b);
+  });
+}
+
+async function enterChat(user) {
+  currentUser = user;
+  authView.hidden = true;
+  chatView.hidden = false;
+  $("userLabel").textContent = user.name;
+  chat.innerHTML = "";
+  const r = await api("/history");
+  if (r.status === 401) { showAuth(r.data.error); return; }
+  if (r.ok && r.data.messages.length) {
+    chips.style.display = "none";
+    r.data.messages.forEach(m => {
+      addMessage(m.role, m.text, m.role === "bot" ? m.info : null);
+      if (m.cards && m.cards.length) chat.appendChild(renderCards(m.cards));
+    });
+    chat.scrollTop = chat.scrollHeight;
+  } else {
+    start();
+  }
+  input.focus();
+}
+
+async function send(text) {
+  text = text.trim();
+  if (!text) return;
+  stopSpeaking();
+  chips.style.display = "none";
+  addMessage("user", text);
+  input.value = "";
+  input.disabled = true; sendBtn.disabled = true; micBtn.disabled = true;
+  const typing = showTyping();
+
+  const r = await api("/chat", "POST", { message: text });
+  typing.remove();
+  if (r.status === 401) {
+    input.disabled = false; sendBtn.disabled = false; micBtn.disabled = false;
+    showAuth("Your session has expired. Please log in again.");
+    return;
+  }
+  if (!r.ok) {
+    addMessage("bot", "Sorry, something went wrong: " + (r.data.error || r.status));
+  } else {
+    addMessage("bot", r.data.reply, r.data.info);
+    speakText(r.data.reply);
+    if (r.data.cards && r.data.cards.length) {
+      chat.appendChild(renderCards(r.data.cards));
+      chat.scrollTop = chat.scrollHeight;
+    }
+  }
+  input.disabled = false; sendBtn.disabled = false; micBtn.disabled = false;
+  input.focus();
+}
+
+form.addEventListener("submit", e => { e.preventDefault(); send(input.value); });
+
+$("newChat").addEventListener("click", async () => {
+  stopSpeaking();
+  await api("/new_chat", "POST");
+  start();
+  input.focus();
+});
+
+$("logout").addEventListener("click", async () => {
+  stopSpeaking();
+  stopListening();
+  await api("/logout", "POST");
+  currentUser = null;
+  showAuth();
+});
+
+/* ---------------- voice (browser speech: no server changes) ---------------- */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+const micBtn = $("mic"), voiceLang = $("voiceLang"), speakToggle = $("speakToggle"), voiceStatus = $("voiceStatus");
+let recognition = null, listening = false;
+
+const VOICE_ERRORS = {
+  "not-allowed": "Microphone permission is blocked. Allow the microphone in the address bar and try again.",
+  "service-not-allowed": "Microphone permission is blocked. Allow the microphone in the address bar and try again.",
+  "no-speech": "I did not hear anything. Please try again.",
+  "audio-capture": "No microphone was found.",
+  "network": "The speech service could not be reached. Check your internet connection."
+};
+
+function setListening(on) {
+  listening = on;
+  micBtn.classList.toggle("listening", on);
+  micBtn.setAttribute("aria-pressed", on ? "true" : "false");
+}
+
+function stopListening() {
+  const rec = recognition;
+  recognition = null;
+  if (rec) { rec.cancelled = true; try { rec.abort(); } catch (e) {} }
+  setListening(false);
+}
+
+function startListening() {
+  stopSpeaking();
+  input.value = "";
+  voiceStatus.textContent = "Listening... speak now";
+  const rec = new SR();
+  recognition = rec;
+  rec.lang = voiceLang.value;
+  rec.interimResults = true;
+  rec.continuous = false;
+  let finalText = "", failed = false;
+
+  rec.onresult = e => {
+    let interim = "";
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const piece = e.results[i][0].transcript;
+      if (e.results[i].isFinal) finalText += piece; else interim += piece;
+    }
+    input.value = (finalText + interim).trim();
+  };
+  rec.onerror = e => {
+    if (e.error === "aborted") return;
+    failed = true;
+    voiceStatus.textContent = VOICE_ERRORS[e.error] || "Voice input error: " + e.error;
+  };
+  rec.onend = () => {
+    if (recognition === rec) recognition = null;
+    setListening(false);
+    if (rec.cancelled) return;
+    const text = (finalText || input.value).trim();
+    if (failed) return;
+    if (text) { voiceStatus.textContent = ""; send(text); }
+    else voiceStatus.textContent = "I did not catch that. Please try again.";
+  };
+  try { rec.start(); setListening(true); }
+  catch (e) { recognition = null; voiceStatus.textContent = "Could not start the microphone."; }
+}
+
+function stopSpeaking() {
+  if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+}
+
+function speakText(text) {
+  if (!speakToggle.checked || !("speechSynthesis" in window) || !window.SpeechSynthesisUtterance) return;
+  const clean = text.replace(/\*\*/g, "").replace(/^\s*[-*]\s+/gm, "").replace(/\s+/g, " ").trim();
+  if (!clean) return;
+  const u = new window.SpeechSynthesisUtterance(clean);
+  u.lang = "en-US";   // English voices read English answers best; Roman Urdu sounds unnatural
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(u);
+}
+
+micBtn.addEventListener("click", () => {
+  if (listening && recognition) recognition.stop();   // finish and send what was heard
+  else startListening();
+});
+
+if (!SR) {
+  micBtn.hidden = true;
+  voiceLang.hidden = true;
+  voiceStatus.textContent = "Voice input works in Chrome or Edge.";
+}
+if (!("speechSynthesis" in window)) $("speakLabel").hidden = true;
+
+/* ---------------- start ---------------- */
+(async function boot() {
+  const r = await api("/me");
+  if (r.ok) await enterChat(r.data.user); else showAuth();
+})();
+</script>
+</body>
+</html>
